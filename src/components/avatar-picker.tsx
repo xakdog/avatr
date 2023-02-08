@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { Avatar } from "./avatar";
 import { AvatarSize } from "./avatar-context";
 import { CameraIcon } from "./icons/camera-icon";
 import { useAvatarPickerStyles } from "./avatar-picker.styles";
 import { useAvatarUploader } from "./avatar-picker.uploader";
+import { useRandomId } from "../helpers/random-id";
 
 export type AvatarPickerProps = {
   size: AvatarSize;
@@ -11,28 +12,29 @@ export type AvatarPickerProps = {
   initials?: string;
 };
 
-const getRandomId = () =>
-  `avatar-upload-${Math.random().toString(36).substring(2, 15)}`;
-
 export const AvatarPicker: React.FC<AvatarPickerProps> = ({
   size,
   userId,
   initials,
 }) => {
-  const [randomId, setRandomId] = useState("");
+  const randomId = useRandomId("avatar-file-");
   const [isHovering, setIsHovering] = useState(false);
 
   const { uploadAvatar } = useAvatarUploader(userId);
   const { hoverContentStyle, cameraIconStyle } = useAvatarPickerStyles();
 
-  useEffect(() => {
-    setRandomId(getRandomId());
-  }, [setRandomId]);
-
   const hoverContent = !isHovering ? null : (
     <label htmlFor={randomId} style={hoverContentStyle}>
       <CameraIcon height="50%" width="50%" style={cameraIconStyle} />
     </label>
+  );
+
+  const onFileChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) uploadAvatar(file);
+    },
+    [uploadAvatar]
   );
 
   return (
@@ -45,15 +47,12 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
         {hoverContent}
 
         <input
+          id={randomId}
+          onChange={onFileChange}
           type="file"
           name="avatar"
-          id={randomId}
           accept="image/png, image/jpeg"
           style={{ display: "none" }}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) uploadAvatar(file);
-          }}
         />
       </form>
     </Avatar>

@@ -27,12 +27,12 @@ export type AvatarContextType = {
 };
 
 export type AvatarContextProps = {
-  apiEndpoint: string;
+  apiBaseUrl: string;
   customStyles: AvatarContextType;
 };
 
 export const AvatarContext = createContext<AvatarContextProps>({
-  apiEndpoint: "https://api.invites.dev/avatar/upload",
+  apiBaseUrl: "https://api.invites.dev/avatar",
 
   customStyles: {
     avatarWrapper: {},

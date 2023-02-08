@@ -1,5 +1,5 @@
 import { useCallback, useContext, useState } from "react";
-import { getDeveloperToken } from "../helpers/developer-key";
+import { getAuthToken, jwtSetupInstructions } from "../helpers/auth-token";
 import { AvatarContext } from "./avatar-context";
 
 export const useAvatarUploader = (userId: string) => {
@@ -7,13 +7,24 @@ export const useAvatarUploader = (userId: string) => {
   const [uploaded, setUploaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const { apiEndpoint } = useContext(AvatarContext);
+  const { apiBaseUrl } = useContext(AvatarContext);
 
   const uploadAvatar = useCallback(
     async (file: File) => {
       setIsUploading(true);
 
-      const token = getDeveloperToken();
+      let token = "";
+
+      try {
+        token = await getAuthToken();
+      } catch (error: any) {
+        setError(error);
+        throw new Error(
+          "Failed to get auth token. Make sure you have " +
+            "set up /invites-dev/jwt endpoint correctly.\n\n" +
+            jwtSetupInstructions
+        );
+      }
 
       if (!token) {
         throw new Error(
@@ -24,10 +35,10 @@ export const useAvatarUploader = (userId: string) => {
 
       const formData = new FormData();
       formData.append("avatar", file);
-      formData.append("token", `${token}.${userId}`);
+      formData.append("token", token);
 
       try {
-        const response = await fetch(apiEndpoint, {
+        const response = await fetch(`${apiBaseUrl}/upload`, {
           method: "POST",
           body: formData,
         });
@@ -46,7 +57,7 @@ export const useAvatarUploader = (userId: string) => {
         setIsUploading(false);
       }
     },
-    [apiEndpoint, userId, setIsUploading, setUploaded, setError]
+    [apiBaseUrl, userId, setIsUploading, setUploaded, setError]
   );
 
   return { isUploading, uploaded, error, uploadAvatar };
